@@ -9,6 +9,7 @@
 library( dplyr )
 library( tidyr )
 
+# Recommend setting your working directory before reading this file in, as it is ~6.5MB
 dat <- readRDS(
         gzcon(
           url(
