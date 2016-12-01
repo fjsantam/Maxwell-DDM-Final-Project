@@ -28,6 +28,6 @@ dat <- dat %>% separate( stoptime, c("stop.date", "stop.time"), sep = " " )
 head( dat )
 
 #To write to a CSV, use the code below.
-write.csv( dat, "C:/Users/...File Name.csv", row.names = F)
+#write.csv( dat, "C:/Users/...File Name.csv", row.names = F)
 # Put the file path here that you want the .csv to be written to.
 # Writing this file to .csv returns a file ~50MB in size, so this action is not recommended.
