@@ -1,0 +1,32 @@
+#Load Required Packages
+library( dplyr )
+library( tidyr )
+library( plotly )
+library( lubridate )
+
+#Prep the Data:
+dat <- readRDS(
+  gzcon(
+    url(
+      "https://cdn.rawgit.com/fjsantam/Maxwell-DDM-Final-Project/master/NYC%20Bike%20Share%20Data.rds"
+    )
+  )
+)
+
+dat <- dat %>% separate( starttime, c("start.date", "start.time"), sep = " " )
+dat <- dat %>% separate( stoptime, c("stop.date", "stop.time"), sep = " " )
+head( dat )
+
+test <- dat
+test$start.time <- gsub( ":", "", test$start.time )
+test$start.time <- as.integer( test$start.time )
+#test$start.time <- as.POSIXlt( test$start.time, format = "%R" )
+test$stop.time <- gsub( ":", "", test$stop.time )
+test$stop.time <- as.integer( test$stop.time )
+
+test$period <- cut( test$start.time, c( 0, 400, 800, 1200, 1600, 2000, 2400), labels = c("Midnight", "Early Morning", "Late Morning", "Afternoon", "Evening", "Night"), right=F)
+#saves the cuts in column "period" within the vector
+
+avg.cuts <- group_by( test, period) %>% summarize( mean(tripduration)/60 )
+avg.cuts
+#returns the information in test#period grouped by the average trip duration in minutes
