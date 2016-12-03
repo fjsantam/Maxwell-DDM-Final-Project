@@ -27,4 +27,4 @@ test$period <- cut( test$start.time, c( 0, 400, 800, 1200, 1600, 2000, 2400), la
 
 avg.cuts <- group_by( test, period) %>% summarize( mean(tripduration)/60 )
 avg.cuts
-#returns the information in test#period grouped by the average trip duration in minutes
+#returns the information in test$period grouped by the average trip duration in minutes
