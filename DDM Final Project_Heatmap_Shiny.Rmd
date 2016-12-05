@@ -1,0 +1,107 @@
+---
+title: "DDM Final Project_Heatmap_Shiny"
+author: "Team"
+date: "December 5, 2016"
+output: html_document
+runtime: shiny
+---
+Heat Map of Bike Availability, showing days of the week against time period of the day
+
+#Load Required Packages
+```{r}
+library( dplyr )
+library( tidyr )
+library( ggplot2 )
+library( lubridate )
+library( scales )
+library( gtable )
+```
+
+#Prep the Data:
+```{r}
+dat <- readRDS(
+        gzcon(
+          url(
+          "https://cdn.rawgit.com/fjsantam/Maxwell-DDM-Final-Project/master/NYC%20Bike%20Share%20Data.rds"
+            )
+          )
+        )
+
+dat <- dat %>% separate( starttime, c("start.date", "start.time"), sep = " " )
+dat <- dat %>% separate( stoptime, c("stop.date", "stop.time"), sep = " " )
+
+head( dat )
+```
+
+Prep the Day Breaks
+```{r}
+test <- dat
+# Converts time into values, with max value for a given hundred set at 59 and moving to the next sequential hundred digit at 60
+# Example 1259, next value is 1300 NOT 1260
+test$start.time <- gsub( ":", "", test$start.time )
+test$start.time <- as.integer( test$start.time )
+test$stop.time <- gsub( ":", "", test$stop.time )
+test$stop.time <- as.integer( test$stop.time )
+
+test$period <- cut( test$start.time, c( 0, 400, 800, 1200, 1600, 2000, 2400), labels = c("Midnight", "Early Morning", "Late Morning", "Afternoon", "Evening", "Night"), right=F)
+# Saves the cuts in column "period" within the vector
+
+# avg.cuts <- group_by( test, period) %>% summarize( mean(tripduration)/60 )
+# avg.cuts
+# Returns the information in test$period grouped by the average trip duration in minutes
+```
+
+Get Weekday from Date
+```{r}
+test$start.date <- as.Date(test$start.date, format = "%m/%d/%Y")
+test$weekday <- weekdays(test$start.date)
+days.week <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+list.periods <- c( "Night", "Evening", "Afternoon", "Late Morning", "Early Morning", "Midnight")
+#test_sub <- subset(test, select = c(start.date, weekday, start.time, period))
+
+# Will generate a vector with every possible combination of days and periods
+#lst <- expand.grid( days.week, list.periods )
+#lst <- lst %>% group_by( Var1, Var2 ) %>% summarize(count = n() )
+
+
+```
+
+
+Heatmap with ggplot2
+```{r}
+sub2 <- test %>% group_by(weekday, period) %>% summarize( count = n() )
+sub2$start.station.name <- " All Stations"
+sub2 <- sub2[,c("weekday","period","start.station.name","count")]
+```
+
+Background Cleaning
+```{r}
+sub3 <- test %>% group_by(weekday, period, start.station.name) %>% summarize(count = n() )
+sub3 <- rbind(sub2, sub3)
+sub3$weekday <- factor( sub3$weekday, levels = days.week )
+sub3$period <- factor( sub3$period, levels = list.periods )
+stations <- unique( sub3$start.station.name )
+stations <- sort( as.character(stations) )
+cool.colors <- c( "#27336E", "#ED1330" )
+```
+
+
+```{r, echo=FALSE}
+selectInput( 
+           inputId='station', 
+           label='Choose a Station', 
+           choices = stations,
+           selected = "All Stations"
+         )
+
+renderPlot({
+  filtered <- filter( .data = sub3, start.station.name == input$station  )
+
+  ggplot( data = filtered, aes( x = filtered$weekday, y = filtered$period, fill = count )) + geom_tile() + scale_fill_gradientn( colors=cool.colors,  na.value = "0" )  + labs(title = "January Ridership by Station") + labs( x = "", y = "") + theme( panel.border = element_blank(), 
+         panel.grid.major = element_blank(),
+         panel.grid.minor = element_blank(),
+         panel.background = element_rect( fill="black" )
+      )
+})
+
+```
