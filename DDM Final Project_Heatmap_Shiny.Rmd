@@ -85,23 +85,46 @@ stations <- sort( as.character(stations) )
 cool.colors <- c( "#27336E", "#ED1330" )
 ```
 
-
+Produce the Plots
 ```{r, echo=FALSE}
 selectInput( 
            inputId='station', 
            label='Choose a Station', 
            choices = stations,
-           selected = "All Stations"
+           selected = " All Stations"
          )
 
 renderPlot({
   filtered <- filter( .data = sub3, start.station.name == input$station  )
 
-  ggplot( data = filtered, aes( x = filtered$weekday, y = filtered$period, fill = count )) + geom_tile() + scale_fill_gradientn( colors=cool.colors,  na.value = "0" )  + labs(title = "January Ridership by Station") + labs( x = "", y = "") + theme( panel.border = element_blank(), 
-         panel.grid.major = element_blank(),
-         panel.grid.minor = element_blank(),
-         panel.background = element_rect( fill="black" )
-      )
+  if( filtered$start.station.name == " All Stations"){
+        ggplot( data = filtered, 
+                aes( x = filtered$weekday, y = filtered$period, fill = count )
+                ) + 
+        geom_tile() + 
+        guides( fill = F ) + 
+        scale_fill_gradientn( colors=cool.colors ) + 
+        labs(title = "January Ridership by Station") + 
+        labs( x = "", y = "") + 
+        theme( panel.border = element_blank(), 
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect( fill="black" )
+        )  
+  } else {
+        ggplot( data = filtered, 
+                aes( x = filtered$weekday, y = filtered$period, fill = count )
+                ) + 
+        geom_tile() + 
+        guides( fill = F ) + 
+        scale_fill_gradientn( colors=cool.colors, limits=c(0,378) ) + 
+        labs(title = "January Ridership by Station") + 
+        labs( x = "", y = "") + 
+        theme( panel.border = element_blank(), 
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.background = element_rect( fill="black" )
+        )
+  }
 })
-
 ```
