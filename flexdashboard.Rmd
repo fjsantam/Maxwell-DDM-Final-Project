@@ -203,3 +203,13 @@ Row
 
 Who?
 =======================================================================
+
+```{r}
+subdat <- dat[1:200,]  
+DT::datatable(subdat,
+                 options = list(
+                  pageLength = 25,
+                  initComplete = I("function(settings, json) {alert('Done.');}")
+                )
+             )
+```
