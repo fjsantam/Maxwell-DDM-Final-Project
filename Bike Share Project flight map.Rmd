@@ -1,0 +1,67 @@
+---
+title: "Untitled"
+author: "Christine Brown"
+date: "December 1, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# This is not complete
+
+```{r}
+library(flexdashboard)
+library(dplyr)
+library(maps)
+library(geosphere)
+library( dplyr )
+library( tidyr )
+library( lubridate)
+library( shiny )
+library( ggmap )
+
+dat <- readRDS(
+
+        gzcon(
+
+          url(
+
+          "https://cdn.rawgit.com/fjsantam/Maxwell-DDM-Final-Project/master/NYC%20Bike%20Share%20Data.rds"
+
+            )
+
+          )
+
+        )
+
+# gzcon is a built-in decompressor that must be run when loading a .RDS straight from a website.
+
+
+dat <- readRDS( gzcon( url( "https://cdn.rawgit.com/fjsantam/Maxwell-DDM-Final-Project/master/NYC%20Bike%20Share%20Data.rds" ) ) )
+#separate date-times into dates and times
+dat <- dat %>% separate( starttime, c("start.date", "start.time"), sep = " " )
+dat <- dat %>% separate( stoptime, c("stop.date", "stop.time"), sep = " " )
+
+#convert date to date format
+dat$start.date <- as.Date(dat$start.date, format = "%m/%d/%Y")
+
+#get day of week from date
+dat$weekday <- weekdays(dat$start.date)
+```
+
+bbox <- make_bbox(lon=dat$start.station.longitude, lat=dat$start.station.latitude, f = .4 )
+
+NYC <- get_map(location = bbox , maptype = "terrain-lines" )
+
+ggmap(NYC) + geom_point(data=dat, aes(x= unique(start.station.longitude), y = unique(start.station.latitude)))
+
+
+
+
+
+
+plot.new()
+map( "county", region=c("new york,new york", "new york,bronx", "new york,kings", "new york,richmond") , fill=T, col="#37A4E9", bg="grey15" )
+points(unique(dat$start.station.longitude), unique(dat$start.station.latitude), pch=3, cex=0.1, col="chocolate1")
