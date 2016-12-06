@@ -67,7 +67,7 @@ list.periods <- c( "Night", "Evening", "Afternoon", "Late Morning", "Early Morni
 ```
 
 
-Heatmap with ggplot2
+Heatmap data for All Stations
 ```{r}
 sub2 <- test %>% group_by(weekday, period) %>% summarize( count = n() )
 sub2$start.station.name <- " All Stations"
