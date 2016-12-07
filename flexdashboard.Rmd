@@ -20,6 +20,8 @@ library(maps)
 library( scales )
 library( shiny )
 library( tidyr )
+library(networkD3)
+library(DT)
 
 #Load Data
 dat <- readRDS( gzcon( url( "https://cdn.rawgit.com/fjsantam/Maxwell-DDM-Final-Project/master/NYC%20Bike%20Share%20Data.rds" ) ) )
@@ -56,10 +58,11 @@ net <- net %>%
 
 net100 <- net %>% filter(count >=100)
 
-simpleNetwork(net100[1:2])
+tags$b(tags$h3("Most popular bike routes in NY (+100 trips)"))
+simpleNetwork(net100[1:2], fontSize=12, nodeColour="#27336E", nodeClickColour="#ED1330", zoom=TRUE)
 ```
 
-Column {data-width=350}
+Column {data-width=400}
 -----------------------------------------------------------------------
 
 ###
@@ -112,7 +115,7 @@ text(x = barplot,
      cex = 1, 
      font = 2, 
      col = "gray0")
- }, height = 325, width = 330)
+ }, height = 275, width = 300)
 ))
 ```
 
@@ -170,8 +173,7 @@ renderPlot({
                 ) + 
         geom_tile() + 
         guides( fill = F ) + 
-        scale_fill_gradientn( colors=cool.colors ) + 
-        labs(title = "January Ridership by Station") + 
+        scale_fill_gradientn( colors=cool.colors ) +
         labs( x = "", y = "") + 
         theme( panel.border = element_blank(), 
           panel.grid.major = element_blank(),
@@ -184,8 +186,7 @@ renderPlot({
                 ) + 
         geom_tile() + 
         guides( fill = F ) + 
-        scale_fill_gradientn( colors=cool.colors, limits=c(0,378) ) + 
-        labs(title = "January Ridership by Station") + 
+        scale_fill_gradientn( colors=cool.colors, limits=c(0,378) ) +
         labs( x = "", y = "") + 
         theme( panel.border = element_blank(), 
           panel.grid.major = element_blank(),
