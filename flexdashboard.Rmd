@@ -4,7 +4,7 @@ output:
   flexdashboard::flex_dashboard:
     orientation: columns
     social: menu
-    source_code: embed
+    source_code: embed #Comment this line out if run issues on SU machines
 runtime: shiny
 ---
 
@@ -135,25 +135,35 @@ test$stop.time <- as.integer( test$stop.time )
 test$period <- cut( test$start.time, c( 0, 400, 800, 1200, 1600, 2000, 2400), labels = c("Midnight", "Early Morning", "Late Morning", "Afternoon", "Evening", "Night"), right=F)
 # Saves the cuts in column "period" within the vector
 
-# avg.cuts <- group_by( test, period) %>% summarize( mean(tripduration)/60 )
-# avg.cuts
-# Returns the information in test$period grouped by the average trip duration in minutes
+# Reformat the start.date values to the "date" class
 test$start.date <- as.Date(test$start.date, format = "%m/%d/%Y")
+# Create a new column that has the matching Weekday name per date
 test$weekday <- weekdays(test$start.date)
-days.week <- c("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
-list.periods <- c( "Night", "Evening", "Afternoon", "Late Morning", "Early Morning", "Midnight")
-#test_sub <- subset(test, select = c(start.date, weekday, start.time, period))
 
-# Will generate a vector with every possible combination of days and periods
-#lst <- expand.grid( days.week, list.periods )
-#lst <- lst %>% group_by( Var1, Var2 ) %>% summarize(count = n() )
+# Convert the Weekday names to shorthand
+test$weekday <- gsub("Monday", "Mon", test$weekday, ignore.case = FALSE, fixed = FALSE)
+test$weekday <- gsub("Tuesday", "Tue", test$weekday, ignore.case = FALSE, fixed = FALSE)
+test$weekday <- gsub("Wednesday", "Wed", test$weekday, ignore.case = FALSE, fixed = FALSE)
+test$weekday <- gsub("Thursday", "Thu", test$weekday, ignore.case = FALSE, fixed = FALSE)
+test$weekday <- gsub("Friday", "Fri", test$weekday, ignore.case = FALSE, fixed = FALSE)
+test$weekday <- gsub("Saturday", "Sat", test$weekday, ignore.case = FALSE, fixed = FALSE)
+test$weekday <- gsub("Sunday", "Sun", test$weekday, ignore.case = FALSE, fixed = FALSE)
+days.week <- c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+list.periods <- c( "Night", "Evening", "Afternoon", "Late Morning", "Early Morning", "Midnight")
+
+# Create a dataframe that contains count of observations for each combination of weekdays and periods
 sub2 <- test %>% group_by(weekday, period) %>% summarize( count = n() )
+# Add the same station name to each row, which is effectively a summary row for that weekday-period combo
 sub2$start.station.name <- " All Stations"
+# Re-order the dataframe to match the parent dataframe's column order
 sub2 <- sub2[,c("weekday","period","start.station.name","count")]
+# Create a dataframe that contains count of observations for each combination of weekday, period, and start station
 sub3 <- test %>% group_by(weekday, period, start.station.name) %>% summarize(count = n() )
+# Combine the station-specific and summary dataframes into one
 sub3 <- rbind(sub2, sub3)
 sub3$weekday <- factor( sub3$weekday, levels = days.week )
 sub3$period <- factor( sub3$period, levels = list.periods )
+# Create a list of unique station names for the Shiny selection list
 stations <- unique( sub3$start.station.name )
 stations <- sort( as.character(stations) )
 cool.colors <- c( "#27336E", "#ED1330" )
