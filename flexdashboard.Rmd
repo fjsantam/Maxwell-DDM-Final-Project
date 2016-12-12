@@ -10,18 +10,22 @@ runtime: shiny
 
 ```{r setup, include=FALSE}
 #Install Packages
-library(dplyr)
-library(flexdashboard)
+library( dplyr )
+library( DT )
+library( flexdashboard )
 library( gtable )
 library( ggplot2 )
-library(geosphere)
+library( geosphere )
+library( leaflet )
 library( lubridate)
-library(maps)
+library( maps )
+library( networkD3 )
+library( RColorBrewer )
 library( scales )
 library( shiny )
 library( tidyr )
-library(networkD3)
-library(DT)
+
+
 
 #Load Data
 dat <- readRDS( gzcon( url( "https://cdn.rawgit.com/fjsantam/Maxwell-DDM-Final-Project/master/NYC%20Bike%20Share%20Data.rds" ) ) )
@@ -38,7 +42,7 @@ dat$weekday <- weekdays(dat$start.date, abbreviate = T)
 ```
 
 
-When?
+Descriptive Statistics
 =======================================================================
 
 Column {data-width=650}
@@ -207,16 +211,65 @@ renderPlot({
 }, height = 275)
 ```
 
-Where?
+Station Map
 =======================================================================
 
+```{r}
+stations <- data.frame(station.name=dat$start.station.name,
+                      latitude=dat$start.station.latitude,
+                      longitude=dat$start.station.longitude)
+stations2 <- data.frame(station.name=dat$end.station.name,
+                       latitude=dat$end.station.latitude,
+                       longitude=dat$end.station.longitude)
+stations <- rbind(stations, stations2)
+stations <- unique(stations)
+dayofweek <- c("All Days", "Mon", "Tue","Wed","Thu", "Fri","Sat","Sun")
+```
 
-Row
------------------------------------------------------------------------
 
-![](https://d21xlh2maitm24.cloudfront.net/nyc/CitiBike_Logo_p.svg?mtime=20160427183115)
+```{r}
 
-Who?
+  selectInput("SelectWeekday", label = h5("Choose a Weekday"), 
+     choices = dayofweek, selected = "All Days")
+
+renderLeaflet({
+    if(input$SelectWeekday=="All Days") { 
+      start.trips <- dat %>% 
+      group_by(start.station.name) %>%
+      summarize(count=n())
+      
+      stations <- merge(stations, start.trips, by.x="station.name", by.y="start.station.name")
+      palette <- colorNumeric( palette=c("#27336E","#ED1330"), domain=stations$count)
+  
+      map <- leaflet(data=stations) %>%
+      setView(lat=40.73029, lng=-73.99076, zoom=13) %>%
+      addProviderTiles("CartoDB.Positron") %>%
+      addCircles(lng=~longitude, lat=~latitude, 
+             radius=~count/50, color=~palette(count), 
+             popup=~station.name)
+      map 
+    } else {
+    start.trips <- dat %>% 
+    group_by(start.station.name, weekday) %>%
+    filter(weekday == input$SelectWeekday) %>% 
+    summarize(count=n())
+    
+    stations <- merge(stations, start.trips, by.x="station.name", by.y="start.station.name")
+    palette <- colorNumeric( palette=c("#27336E","#ED1330"), domain=stations$count)
+    map <- leaflet(data=stations) %>%
+    setView(lat=40.73029, lng=-73.99076, zoom=13) %>%
+    addProviderTiles("CartoDB.Positron") %>%
+    addCircles(lng=~longitude, lat=~latitude, 
+             radius=~count/5, color=~palette(count), 
+             popup=~station.name)
+    map
+  }
+  
+  })
+
+```
+
+Data Download
 =======================================================================
 
 ```{r}
@@ -228,3 +281,21 @@ DT::datatable(subdat,
                 )
              )
 ```
+
+About
+=======================================================================
+
+![](https://d21xlh2maitm24.cloudfront.net/nyc/CitiBike_Logo_p.svg?mtime=20160427183115)
+
+This dashboard was compiled by students from the Fall 2016 Data Driven Management course at Syracuse University.
+
+Group Members:
+
+  - Alejandro Alfaro Aco
+  - Christine Brown
+  - Caitlin Eger
+  - Shahzeb Khan
+  - Mengyu Liu
+  - Francisco Santamarina
+
+We are grateful to CitiBike for making its data publicly available.
