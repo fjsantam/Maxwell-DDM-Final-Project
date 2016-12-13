@@ -20,6 +20,7 @@ library( leaflet )
 library( lubridate)
 library( maps )
 library( networkD3 )
+library(igraph)
 library( RColorBrewer )
 library( scales )
 library( shiny )
@@ -50,20 +51,53 @@ Column {data-width=650}
 
 ###
 ```{r}
-start <- dat$start.station.name
-stop <- dat$end.station.name
-
-net <- data.frame(start,stop)
-
+source <- dat$start.station.id
+target <- dat$end.station.id
+name_sta <- dat$start.station.name
+name_end <- dat$end.station.name
+net <- data.frame(source,target, name_sta, name_end)
 net <- net %>% 
-  group_by(start, stop) %>% 
-  summarize(count = n()) %>%
-  arrange(desc(count))
-
-net100 <- net %>% filter(count >=100)
-
-tags$b(tags$h3("Most popular bike routes in NY (+100 trips)"))
-simpleNetwork(net100[1:2], fontSize=12, nodeColour="#27336E", nodeClickColour="#ED1330", zoom=TRUE)
+  group_by(source, target, name_sta, name_end) %>% 
+  summarize(count = n())
+net100_links <- net %>% filter(count >=100)
+net100_nodes <- select(net100_links, name_sta, source)
+net100_nodes <- net100_nodes[-1]
+countt <- net100_links %>% 
+  group_by(name_sta)  %>% 
+  summarize(avg = mean(count))
+net100_links <- select(net100_links,source, target, name_sta, name_end, count)
+colnames(net100_nodes)[1] <- "names"
+net100_nodes <- select(net100_nodes,names)
+net100_nodes <- distinct(net100_nodes)
+net100_nodes$ID <- c(0:37)
+net100_nodes <- subset(net100_nodes, select=c(2,1))
+net100_links <- merge(net100_links, net100_nodes, by.x="name_sta", by.y="names", all.x=TRUE)
+net100_links <- select(net100_links, target, name_end, ID, count)
+colnames(net100_links)[3] <- "source"
+net100_links <- merge(net100_links, net100_nodes, by.x="name_end", by.y="names", all.x=TRUE)
+net100_links <- select(net100_links, source, ID, count)
+colnames(net100_links)[2] <- "target"
+net100_nodes <- mutate(net100_nodes, group = 4, size= (countt$avg-99))
+net100_links$value <- (net100_links$count/10)*1.5
+vertices <- net100_nodes
+net100_links$source.index = match(net100_links$source, vertices$ID)-1
+net100_links$target.index = match(net100_links$target, vertices$ID)-1
+net100_links <- na.omit(net100_links)
+tags$b(tags$h4("Most popular bike routes in NY (+100 trips a month)"))
+forceNetwork(Links = net100_links, Nodes = vertices,
+                  Source = "source.index", Target = "target.index",
+                  NodeID = "names", Nodesize = "size",
+                  radiusCalculation = JS("Math.sqrt(d.nodesize)*2.5"),
+                  Group = "group",
+                  Value = "value",
+                  charge = -100,
+                  height = 600,
+                  width = 800,
+                  linkDistance = 40,
+                  zoom = T,
+                  opacity = .9,
+                  fontSize=12,
+                  linkColour = "#ED1330")
 ```
 
 Column {data-width=400}
