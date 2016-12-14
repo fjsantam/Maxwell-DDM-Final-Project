@@ -84,6 +84,7 @@ net100_links$source.index = match(net100_links$source, vertices$ID)-1
 net100_links$target.index = match(net100_links$target, vertices$ID)-1
 net100_links <- na.omit(net100_links)
 tags$b(tags$h4("Most popular bike routes in NY (+100 trips a month)"))
+tags$h6("Note: Node size is based on the average number trips by start station and link width is based on the number of trips between stations")
 forceNetwork(Links = net100_links, Nodes = vertices,
                   Source = "source.index", Target = "target.index",
                   NodeID = "names", Nodesize = "size",
